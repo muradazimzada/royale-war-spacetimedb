@@ -7,6 +7,7 @@ import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { WORLD_WIDTH, WORLD_HEIGHT } from '../config/constants';
 import { LoginScreen } from './LoginScreen';
+import { useSpaceTimeDB } from '../hooks/useSpaceTimeDB';
 
 interface GameCanvasProps {
     width?: number;
@@ -22,9 +23,29 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
     const [showLogin, setShowLogin] = useState(true);
     const [playerName, setPlayerName] = useState<string>('');
 
+    // Use SpaceTimeDB hook
+    const {
+        connected,
+        isConnecting,
+        error: dbError,
+        playerId,
+        players,
+        fruits,
+        gameState: dbGameState,
+        joinGame,
+        leaveGame,
+        setDirection
+    } = useSpaceTimeDB();
+
     useEffect(() => {
         loadAssets();
-        return () => cleanup();
+        return () => {
+            cleanup();
+            // Leave the game when component unmounts
+            if (playerName) {
+                leaveGame();
+            }
+        };
     }, []);
 
     // Start game after login when canvas is ready
@@ -37,6 +58,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
             return () => clearTimeout(timer);
         }
     }, [showLogin, playerName, gameStarted, isLoading, error]);
+
+    // Handle keyboard input for SpaceTimeDB
+    useEffect(() => {
+        if (!connected || !playerName) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const key = e.key.toLowerCase();
+
+            // Send direction to SpaceTimeDB
+            if (key === 'arrowup' || key === 'w') setDirection('Up');
+            else if (key === 'arrowdown' || key === 's') setDirection('Down');
+            else if (key === 'arrowleft' || key === 'a') setDirection('Left');
+            else if (key === 'arrowright' || key === 'd') setDirection('Right');
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [connected, playerName, setDirection]);
 
     const loadAssets = async () => {
         try {
@@ -87,10 +126,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         }
     };
 
-    const handleLogin = (name: string) => {
-        setPlayerName(name);
-        setShowLogin(false);
-        // Don't start game immediately - wait for canvas to render
+    const handleLogin = async (name: string) => {
+        try {
+            // Join the game in SpaceTimeDB
+            await joinGame(name);
+            setPlayerName(name);
+            setShowLogin(false);
+            // Don't start game immediately - wait for canvas to render
+        } catch (err) {
+            console.error('Failed to join game:', err);
+            setError(err instanceof Error ? err.message : 'Failed to join game');
+        }
     };
 
     const startGame = async (name: string = 'Player') => {
@@ -135,7 +181,55 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
 
     // Show login screen first
     if (showLogin && !isLoading && !error) {
-        return <LoginScreen onLogin={handleLogin} />;
+        return (
+            <div>
+                {/* Connection status */}
+                {isConnecting && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 20,
+                        right: 20,
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        color: 'white',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        zIndex: 1001
+                    }}>
+                        Connecting to SpaceTimeDB...
+                    </div>
+                )}
+                {dbError && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 20,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(244, 67, 54, 0.9)',
+                        color: 'white',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        zIndex: 1001
+                    }}>
+                        Database Error: {dbError}
+                    </div>
+                )}
+                {connected && (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: 20,
+                        right: 20,
+                        background: 'rgba(76, 175, 80, 0.9)',
+                        color: 'white',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        zIndex: 1001
+                    }}>
+                        ✓ Connected to server
+                    </div>
+                )}
+                <LoginScreen onLogin={handleLogin} />
+            </div>
+        );
     }
 
     if (isLoading) {
@@ -193,6 +287,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
 
     return (
         <div style={{ position: 'relative', overflow: 'hidden', width, height, border: '2px solid #333', borderRadius: '8px' }}>
+            {/* SpaceTimeDB Status Panel */}
+            <div style={{
+                position: 'absolute',
+                top: 10,
+                left: 10,
+                background: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                padding: '15px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                zIndex: 100,
+                minWidth: '200px'
+            }}>
+                <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>SpaceTimeDB Status</div>
+                <div style={{ marginBottom: '5px' }}>Player: {playerName}</div>
+                <div style={{ marginBottom: '5px' }}>ID: {playerId.slice(0, 8)}...</div>
+                <div style={{ marginBottom: '5px' }}>
+                    Status: {connected ? (
+                        <span style={{ color: '#4CAF50' }}>● Connected</span>
+                    ) : (
+                        <span style={{ color: '#f44336' }}>● Disconnected</span>
+                    )}
+                </div>
+                <div style={{ marginBottom: '5px' }}>Online Players: {players.length}</div>
+                {dbGameState && (
+                    <div style={{ marginBottom: '5px' }}>
+                        Game: {dbGameState.running ? 'Running' : 'Waiting'}
+                    </div>
+                )}
+            </div>
+
             <div
                 ref={containerRef}
                 style={{
