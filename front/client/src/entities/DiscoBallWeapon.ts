@@ -2,6 +2,7 @@ import { Weapon } from './Weapon';
 import { DiscoPool } from './DiscoPool';
 import { gameState } from '../core/GameState';
 import { randomRange } from '../utils/math';
+import type { Player } from './Player';
 
 export class DiscoBallWeapon extends Weapon {
     level: number;
@@ -17,7 +18,7 @@ export class DiscoBallWeapon extends Weapon {
         return this.level;
     }
 
-    update(): void {
+    update(_player?: Player): void {
         super.update();
         if (this.firstAttackFrame()) {
             const spawnCount = this.spawnCount();

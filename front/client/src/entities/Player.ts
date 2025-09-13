@@ -79,7 +79,7 @@ export class Player {
         this.animation.update(this.idle);
 
         // update weapons...
-        this.items.forEach(item => item.update());
+        this.items.forEach(item => item.update(this));
     }
 
     draw(context: CanvasRenderingContext2D): void {

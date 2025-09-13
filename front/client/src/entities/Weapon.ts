@@ -1,4 +1,5 @@
 import type { GameObject } from '../core/GameState';
+import type { Player } from './Player';
 
 export abstract class Weapon implements GameObject {
     attackSpeed: number; // ms
@@ -21,7 +22,7 @@ export abstract class Weapon implements GameObject {
         this.destroyed = false;
     }
 
-    update(): void {
+    update(_player?: Player): void {
         const msSinceLastAttack = Date.now() - this.lastAttackTime;
         if (msSinceLastAttack > this.attackSpeed) {
             this.attacking = true;
