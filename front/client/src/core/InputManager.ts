@@ -1,0 +1,89 @@
+import { KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN } from '../config/constants';
+import { gameState } from './GameState';
+import { Enemy } from '../entities/Enemy';
+
+export interface InputState {
+    left: boolean;
+    right: boolean;
+    up: boolean;
+    down: boolean;
+}
+
+export class InputManager {
+    private input: InputState = {
+        left: false,
+        right: false,
+        up: false,
+        down: false,
+    };
+
+    private handleKeyDown = (event: KeyboardEvent): void => {
+        switch (event.keyCode) {
+            case KEY_LEFT:
+            case 65: // A key
+                this.input.left = true;
+                break;
+            case KEY_RIGHT:
+            case 68: // D key
+                this.input.right = true;
+                break;
+            case KEY_UP:
+            case 87: // W key
+                this.input.up = true;
+                break;
+            case KEY_DOWN:
+            case 83: // S key
+                this.input.down = true;
+                break;
+            case 48: // 0 key - debug: destroy all enemies
+                this.destroyAllEnemies();
+                break;
+        }
+    };
+
+    private handleKeyUp = (event: KeyboardEvent): void => {
+        switch (event.keyCode) {
+            case KEY_LEFT:
+            case 65: // A key
+                this.input.left = false;
+                break;
+            case KEY_RIGHT:
+            case 68: // D key
+                this.input.right = false;
+                break;
+            case KEY_UP:
+            case 87: // W key
+                this.input.up = false;
+                break;
+            case KEY_DOWN:
+            case 83: // S key
+                this.input.down = false;
+                break;
+        }
+    };
+
+    setupInputHandlers(): void {
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+    }
+
+    removeInputHandlers(): void {
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
+    }
+
+    getInput(): InputState {
+        return { ...this.input };
+    }
+
+    private destroyAllEnemies(): void {
+        for (const object of gameState.objects) {
+            if (object instanceof Enemy) {
+                object.destroy();
+            }
+        }
+    }
+}
+
+// Global input manager instance
+export const inputManager = new InputManager();
