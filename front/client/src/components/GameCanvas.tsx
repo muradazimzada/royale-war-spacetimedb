@@ -34,7 +34,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         gameState: dbGameState,
         joinGame,
         leaveGame,
-        setDirection
+        setDirection,
+        updateScore,
+        startRound,
+        tick
     } = useSpaceTimeDB();
 
     useEffect(() => {
@@ -59,23 +62,46 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         }
     }, [showLogin, playerName, gameStarted, isLoading, error]);
 
-    // Handle keyboard input for SpaceTimeDB
+    // Sync local player movement with SpaceTimeDB direction updates
     useEffect(() => {
-        if (!connected || !playerName) return;
+        if (!connected || !playerName || !gameStarted) return;
 
-        const handleKeyDown = (e: KeyboardEvent) => {
-            const key = e.key.toLowerCase();
+        let lastDirection: string | null = null;
 
-            // Send direction to SpaceTimeDB
-            if (key === 'arrowup' || key === 'w') setDirection('Up');
-            else if (key === 'arrowdown' || key === 's') setDirection('Down');
-            else if (key === 'arrowleft' || key === 'a') setDirection('Left');
-            else if (key === 'arrowright' || key === 'd') setDirection('Right');
+        const syncDirection = () => {
+            // Get current input state from the input manager
+            const input = inputManager.getInput();
+
+            // Determine the primary movement direction based on input
+            let dbDirection: string | null = null;
+
+            // Priority: vertical movement first, then horizontal
+            if (input.up) {
+                dbDirection = 'Up';
+            } else if (input.down) {
+                dbDirection = 'Down';
+            } else if (input.left) {
+                dbDirection = 'Left';
+            } else if (input.right) {
+                dbDirection = 'Right';
+            }
+
+            // Only send update if direction actually changed
+            if (dbDirection && dbDirection !== lastDirection) {
+                console.log(`Syncing direction: ${dbDirection}`);
+                setDirection(dbDirection as 'Up' | 'Down' | 'Left' | 'Right');
+                lastDirection = dbDirection;
+            } else if (!dbDirection && lastDirection) {
+                // Player stopped moving, no specific direction to send
+                // SpaceTimeDB will handle this naturally
+                lastDirection = null;
+            }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [connected, playerName, setDirection]);
+        // Sync direction every 100ms to match server tick rate
+        const syncInterval = setInterval(syncDirection, 100);
+        return () => clearInterval(syncInterval);
+    }, [connected, playerName, gameStarted, setDirection]);
 
     const loadAssets = async () => {
         try {
@@ -150,6 +176,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
             }
             // Create player with the provided name
             const player = new Player(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, name);
+
+            // Set up score synchronization callback
+            player.onScoreUpdate = (newScore: number) => {
+                console.log(`Local player score updated to: ${newScore}`);
+                updateScore(newScore);
+            };
+
             gameState.player = player;
             gameState.addObject(player);
 
@@ -298,24 +331,115 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                 borderRadius: '8px',
                 fontSize: '14px',
                 zIndex: 100,
-                minWidth: '200px'
+                minWidth: '250px'
             }}>
-                <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>SpaceTimeDB Status</div>
-                <div style={{ marginBottom: '5px' }}>Player: {playerName}</div>
+                <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>Player Stats</div>
+                <div style={{ marginBottom: '5px' }}>Name: {playerName}</div>
                 <div style={{ marginBottom: '5px' }}>ID: {playerId.slice(0, 8)}...</div>
-                <div style={{ marginBottom: '5px' }}>
-                    Status: {connected ? (
-                        <span style={{ color: '#4CAF50' }}>● Connected</span>
-                    ) : (
-                        <span style={{ color: '#f44336' }}>● Disconnected</span>
-                    )}
-                </div>
-                <div style={{ marginBottom: '5px' }}>Online Players: {players.length}</div>
-                {dbGameState && (
-                    <div style={{ marginBottom: '5px' }}>
-                        Game: {dbGameState.running ? 'Running' : 'Waiting'}
+
+                {/* Local Game Stats */}
+                {gameState.player && (
+                    <div style={{ marginBottom: '10px', paddingTop: '10px', borderTop: '1px solid #444' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Local Game:</div>
+                        <div style={{ marginBottom: '3px' }}>Level: {gameState.player.level}</div>
+                        <div style={{ marginBottom: '3px' }}>XP: {gameState.player.xp}</div>
+                        <div style={{ marginBottom: '3px' }}>Score: {gameState.player.xp + (gameState.player.level * 10)}</div>
+                        <div style={{ marginBottom: '3px' }}>Health: {gameState.player.health}</div>
                     </div>
                 )}
+
+                {/* SpaceTimeDB Stats */}
+                <div style={{ paddingTop: '10px', borderTop: '1px solid #444' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Database:</div>
+                    <div style={{ marginBottom: '5px' }}>
+                        Status: {connected ? (
+                            <span style={{ color: '#4CAF50' }}>● Connected</span>
+                        ) : (
+                            <span style={{ color: '#f44336' }}>● Disconnected</span>
+                        )}
+                    </div>
+                    <div style={{ marginBottom: '5px' }}>Online Players: {players.length}</div>
+
+                    {/* Current player's DB stats */}
+                    {(() => {
+                        const dbPlayer = players.find(p => p.id === playerId);
+                        if (dbPlayer) {
+                            return (
+                                <div>
+                                    <div style={{ marginBottom: '3px' }}>DB Score: {dbPlayer.score}</div>
+                                    <div style={{
+                                        marginBottom: '3px',
+                                        color: '#4CAF50' // Highlight position to show updates
+                                    }}>
+                                        Position: ({dbPlayer.x}, {dbPlayer.y})
+                                    </div>
+                                    <div style={{ marginBottom: '3px' }}>Dir: {dbPlayer.dir.tag}</div>
+                                    <div style={{ marginBottom: '3px' }}>Alive: {dbPlayer.alive ? '✓' : '✗'}</div>
+                                    <div style={{ fontSize: '12px', color: '#888' }}>
+                                        Last Step: {dbPlayer.lastStepAtMs}
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return <div style={{ color: '#999' }}>Player not in DB</div>;
+                    })()}
+
+                    {dbGameState && (
+                        <div style={{ marginBottom: '5px' }}>
+                            Game: {dbGameState.running ? 'Running' : 'Waiting'}
+                        </div>
+                    )}
+
+                    {/* Debug controls */}
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #444' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug:</div>
+                        <button
+                            onClick={() => startRound(3600)}
+                            style={{
+                                padding: '5px 10px',
+                                margin: '2px',
+                                fontSize: '12px',
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Start Round
+                        </button>
+                        <button
+                            onClick={() => tick()}
+                            style={{
+                                padding: '5px 10px',
+                                margin: '2px',
+                                fontSize: '12px',
+                                backgroundColor: '#2196F3',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Manual Tick
+                        </button>
+                        <button
+                            onClick={() => window.location.reload()}
+                            style={{
+                                padding: '5px 10px',
+                                margin: '2px',
+                                fontSize: '12px',
+                                backgroundColor: '#FF9800',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Refresh
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div

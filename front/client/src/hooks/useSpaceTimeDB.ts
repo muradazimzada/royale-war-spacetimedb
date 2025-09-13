@@ -27,6 +27,7 @@ interface SpaceTimeDBActions {
     setDirection: (direction: 'Up' | 'Down' | 'Left' | 'Right') => void;
     startRound: (durationSeconds: number) => void;
     tick: () => void;
+    updateScore: (newScore: number) => void;
 }
 
 export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
@@ -107,6 +108,24 @@ export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
             // Cleanup will be handled by leaveGame
         };
     }, []);
+
+    // Auto-tick to process server-side game logic
+    useEffect(() => {
+        if (!connection || !connected) return;
+
+        // Start a round first to ensure game is active
+        console.log('Starting game round and auto-tick');
+        connection.reducers.startRound(3600); // Start 1 hour round
+
+        const tickInterval = setInterval(() => {
+            connection.reducers.tick();
+        }, 100); // Tick every 100ms for more responsive movement
+
+        return () => {
+            console.log('Stopping auto-tick');
+            clearInterval(tickInterval);
+        };
+    }, [connection, connected]);
 
     // Setup table listeners for players
     useEffect(() => {
@@ -250,7 +269,13 @@ export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
 
     const setDirection = useCallback((direction: 'Up' | 'Down' | 'Left' | 'Right') => {
         if (!connection || !connected) return;
+        console.log(`Setting direction: ${direction} for player ${playerId}`);
         connection.reducers.setDir(playerId, direction);
+
+        // Also trigger a tick to process the movement server-side
+        setTimeout(() => {
+            connection.reducers.tick();
+        }, 10);
     }, [connection, connected, playerId]);
 
     const startRound = useCallback((durationSeconds: number) => {
@@ -262,6 +287,13 @@ export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
         if (!connection || !connected) return;
         connection.reducers.tick();
     }, [connection, connected]);
+
+    const updateScore = useCallback((newScore: number) => {
+        // Note: SpaceTimeDB doesn't have a direct UpdateScore reducer.
+        // Score updates should happen server-side during game ticks.
+        // This function is kept for interface compatibility but doesn't perform any action.
+        console.log(`Score update requested: ${newScore} for player ${playerId} (handled server-side)`);
+    }, [playerId]);
 
     return {
         // State
@@ -280,5 +312,6 @@ export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
         setDirection,
         startRound,
         tick,
+        updateScore,
     };
 }

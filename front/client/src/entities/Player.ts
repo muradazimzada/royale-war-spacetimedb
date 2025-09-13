@@ -31,6 +31,7 @@ export class Player {
     nextLevelXp: number;
     prevLevelXp: number;
     direction: number;
+    onScoreUpdate?: (newScore: number) => void;
 
     constructor(x: number, y: number, name: string = 'Player') {
         this.name = name;
@@ -139,11 +140,24 @@ export class Player {
     gainXp(xp: number): void {
         this.xp += xp;
         if (this.xp >= this.nextLevelXp) this.levelUp();
+
+        // Trigger score update callback for SpaceTimeDB sync
+        // Score is calculated as: XP + (level * 10)
+        const score = this.xp + (this.level * 10);
+        if (this.onScoreUpdate) {
+            this.onScoreUpdate(score);
+        }
     }
 
     levelUp(): void {
         this.level += 1;
         this.prevLevelXp = this.nextLevelXp;
         this.nextLevelXp = this.nextLevelXp * 2.5;
+
+        // Also trigger score update after level up
+        const score = this.xp + (this.level * 10);
+        if (this.onScoreUpdate) {
+            this.onScoreUpdate(score);
+        }
     }
 }
