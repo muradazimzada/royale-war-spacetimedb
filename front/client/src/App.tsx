@@ -339,7 +339,7 @@
 
 // export default App;
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 
 import {
@@ -533,6 +533,8 @@ function App() {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [conn, setConn] = useState<DbConnection | null>(null);
   const [systemMessage, setSystemMessage] = useState('');
+  DbConnection.builder()
+    .withUri('https://maincloud.spacetimedb.com')
 
   const playerId = useMemo(() => {
     const k = 'rw_pid'; let v = localStorage.getItem(k);
@@ -552,6 +554,7 @@ function App() {
     };
 
     const onConnect = (c: DbConnection, id: Identity, token: string) => {
+      console.log('Connected:', id.toHexString());
       setIdentity(id);
       setConnected(true);
       localStorage.setItem('auth_token', token);
@@ -564,11 +567,13 @@ function App() {
     };
 
     const onDisconnect = () => {
+      console.log('Disconnected.');
       setConnected(false);
       setSystemMessage(prev => prev + '\nDisconnected.');
     };
 
     const onConnectError = (_ctx: ErrorContext, err: Error) => {
+      console.log('Connect error:', err);
       setSystemMessage(prev => prev + '\nConnect error: ' + err.message);
     };
 
