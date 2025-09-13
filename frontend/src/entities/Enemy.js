@@ -18,12 +18,12 @@ export class Enemy {
     constructor(x, y) {
         this.id = getNextEnemyId();
         this.leftAnimation = new Animation([
-            { time: 100, image: skeletonImageLeft },
-            { time: 100, image: skeletonImageLeft2 },
+            { time: 100, image: skeletonImageLeft() },
+            { time: 100, image: skeletonImageLeft2() },
         ]);
         this.rightAnimation = new Animation([
-            { time: 100, image: skeletonImageRight },
-            { time: 100, image: skeletonImageRight2 },
+            { time: 100, image: skeletonImageRight() },
+            { time: 100, image: skeletonImageRight2() },
         ]);
         this.idle = false;
         this.x = x;

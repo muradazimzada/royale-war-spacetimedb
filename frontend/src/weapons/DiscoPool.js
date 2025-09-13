@@ -15,8 +15,8 @@ export class DiscoPool extends Weapon {
         super(speed, animationFrames, strength);
         this.updateFrames = 60 * 10;
         this.animation = new Animation([
-            { time: 12, image: ballImage1 },
-            { time: 12, image: ballImage2 },
+            { time: 12, image: ballImage1() },
+            { time: 12, image: ballImage2() },
         ]);
         const player = gameState.player;
         this.x = player.x + randomRange(-300, 300);

@@ -25,7 +25,7 @@ export function renderGame() {
     resetCanvas();
 
     // draw background
-    const bgPattern = context.createPattern(floorImage, 'repeat');
+    const bgPattern = context.createPattern(floorImage(), 'repeat');
     context.fillStyle = bgPattern;
     context.fillRect(0, 0, canvas.width, canvas.height);
 

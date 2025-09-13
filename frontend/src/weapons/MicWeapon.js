@@ -11,7 +11,7 @@ export class MicWeapon extends Weapon {
         super(attackSpeed, attackAnimationFrames, attackStrength);
         this.level = 8;
         this.radius = 100;
-        this.image = micImage;
+        this.image = micImage();
         this.angle = 0;
         this.enemiesHit = {};
     }

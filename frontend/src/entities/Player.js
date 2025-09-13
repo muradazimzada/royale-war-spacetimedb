@@ -6,14 +6,15 @@ import { MicWeapon } from '../weapons/MicWeapon.js';
 import { DiscoBallWeapon } from '../weapons/DiscoBallWeapon.js';
 
 export class Player {
-    constructor(x, y) {
+    constructor(x, y, name = 'Player') {
+        this.name = name;
         this.leftAnimation = new Animation([
-            { time: 12, image: playerImageLeft },
-            { time: 12, image: playerImageLeft2 },
+            { time: 12, image: playerImageLeft() },
+            { time: 12, image: playerImageLeft2() },
         ]);
         this.rightAnimation = new Animation([
-            { time: 12, image: playerImageRight },
-            { time: 12, image: playerImageRight2 },
+            { time: 12, image: playerImageRight() },
+            { time: 12, image: playerImageRight2() },
         ]);
         this.idle = true;
         this.x = x;
@@ -60,6 +61,40 @@ export class Player {
             this.y - (this.height / 2.0),
             this.width, this.height
         );
+
+        // draw player name above sprite
+        this.drawName(context);
+    }
+
+    drawName(context) {
+        context.save();
+        
+        // Set font and measure text
+        context.font = '14px monospace';
+        const textMetrics = context.measureText(this.name);
+        const textWidth = textMetrics.width;
+        const textHeight = 14;
+        
+        // Position above player sprite
+        const nameX = this.x;
+        const nameY = this.y - (this.height / 2.0) - 20;
+        
+        // Draw background rectangle for better readability
+        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        context.fillRect(
+            nameX - (textWidth / 2) - 4,
+            nameY - textHeight,
+            textWidth + 8,
+            textHeight + 4
+        );
+        
+        // Draw name text
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.textBaseline = 'top';
+        context.fillText(this.name, nameX, nameY - textHeight + 2);
+        
+        context.restore();
     }
 
     setDirection(direction) {

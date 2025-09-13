@@ -4,7 +4,7 @@ import { lerp } from '../utils/math.js';
 
 export class Candy {
     constructor(x, y) {
-        this.image = candyDroppedImage;
+        this.image = candyDroppedImage();
         this.x = x;
         this.y = y;
         this.attractRadius = 200;
