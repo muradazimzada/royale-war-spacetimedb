@@ -17,6 +17,8 @@ export class InputManager {
         down: false,
     };
 
+    private restartCallback?: () => void;
+
     private handleKeyDown = (event: KeyboardEvent): void => {
         switch (event.keyCode) {
             case KEY_LEFT:
@@ -37,6 +39,11 @@ export class InputManager {
                 break;
             case 48: // 0 key - debug: destroy all enemies
                 this.destroyAllEnemies();
+                break;
+            case 82: // R key - restart game
+                if (gameState.isGameOver()) {
+                    this.restartGame();
+                }
                 break;
         }
     };
@@ -82,6 +89,16 @@ export class InputManager {
                 object.destroy();
             }
         }
+    }
+
+    private restartGame(): void {
+        if (this.restartCallback) {
+            this.restartCallback();
+        }
+    }
+
+    setRestartCallback(callback: () => void): void {
+        this.restartCallback = callback;
     }
 }
 

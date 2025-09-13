@@ -71,6 +71,13 @@ export class Enemy {
             return;
         }
 
+        // Stop all enemy behavior if game is over or player is dead
+        if (gameState.isGameOver() || player.health <= 0) {
+            // Still update animation to avoid frozen sprites
+            this.animation.update(true); // Set idle to true
+            return;
+        }
+
         // move towards the player...
         const dx = player.x - this.x;
         const dy = player.y - this.y;
@@ -130,6 +137,11 @@ export class Enemy {
     }
 
     handleAttacks(player: Player): void {
+        // Don't attack if player is dead or game is over
+        if (player.health <= 0 || gameState.isGameOver()) {
+            return;
+        }
+
         const now = Date.now();
         if (now - this.lastAttackTime > this.attackSpeed) {
             if (pointInCircle(

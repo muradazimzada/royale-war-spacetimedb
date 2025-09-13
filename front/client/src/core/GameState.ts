@@ -15,6 +15,7 @@ export class GameState {
     levelRunStart: Date = new Date();
     isRunning: boolean = false;
     lastFrameTime: number = 0;
+    gameOver: boolean = false;
 
     reset(): void {
         this.objects = [];
@@ -23,6 +24,16 @@ export class GameState {
         this.levelRunStart = new Date();
         this.isRunning = false;
         this.lastFrameTime = 0;
+        this.gameOver = false;
+    }
+
+    setGameOver(): void {
+        this.gameOver = true;
+        this.isRunning = false;
+    }
+
+    isGameOver(): boolean {
+        return this.gameOver;
     }
 
     addObject(object: GameObject): void {

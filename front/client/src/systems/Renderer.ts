@@ -90,6 +90,11 @@ function renderGameOver(context: CanvasRenderingContext2D, canvasContainer: HTML
         context.textAlign = 'center';
         context.textBaseline = 'top';
         context.fillText('Game Over', x, y);
+
+        // Add restart instruction
+        context.font = '16px monospace';
+        context.fillStyle = '#aaa';
+        context.fillText('Press R to restart', x, y + 40);
     });
 }
 

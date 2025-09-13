@@ -57,6 +57,17 @@ export class GameLoop {
             return;
         }
 
+        // Check if player is dead and set game over
+        if (gameState.player.health <= 0 && !gameState.isGameOver()) {
+            gameState.setGameOver();
+            return;
+        }
+
+        // Stop all updates if game is over
+        if (gameState.isGameOver()) {
+            return;
+        }
+
         const input = inputManager.getInput();
 
         // Update player
@@ -96,6 +107,9 @@ export class GameLoop {
 
     private spawnEnemies(): void {
         if (!gameState.player) return;
+
+        // Don't spawn enemies if game is over or player is dead
+        if (gameState.isGameOver() || gameState.player.health <= 0) return;
 
         const now = Date.now();
         if (now - this.lastEnemySpawnTime < ENEMY_SPAWN_TIME_BETWEEN_WAVES) return;

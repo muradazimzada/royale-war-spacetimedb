@@ -195,6 +195,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
 
             // Setup input and start game loop
             inputManager.setupInputHandlers();
+            inputManager.setRestartCallback(restartGame);
             gameLoop.start();
 
             setGameStarted(true);
@@ -209,6 +210,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         gameLoop.stop();
         inputManager.removeInputHandlers();
         gameState.reset();
+    };
+
+    const restartGame = async () => {
+        try {
+            // Stop current game
+            cleanup();
+
+            // Reset game state completely
+            gameState.reset();
+
+            // Start new game with same player name
+            await startGame(playerName);
+
+            console.log('Game restarted!');
+        } catch (err) {
+            console.error('Failed to restart game:', err);
+            setError(err instanceof Error ? err.message : 'Failed to restart game');
+        }
     };
 
     // Show login screen first
