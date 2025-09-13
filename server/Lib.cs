@@ -16,7 +16,6 @@ public static partial class Module
     public static void Add(ReducerContext ctx, string name, int age)
     {
         var person = ctx.Db.Person.Insert(new Person { Name = name, Age = age });
-
         Log.Info($"Inserted {person.Name} under #{person.Id}");
     }
 
@@ -25,7 +24,6 @@ public static partial class Module
     {
         foreach (var person in ctx.Db.Person.Iter())
         {
-
             Log.Info($"Hello, {person.Name}!");
         }
         Log.Info("Hello, World!");

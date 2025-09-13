@@ -1,57 +1,56 @@
 using System;
 using System.Collections.Generic;
 using SpacetimeDB;
-using System.Linq;
-
 
 public static partial class Module
 {
     // ─────────────────────────────────────────────────────────────────────────
-    // TABLES  (partial struct + field attributes; NO properties)
+    // TABLES  (partial class + FIELD members; attributes on fields)
+    // Names are lowercased in ctx.Db: game_state, player, fruit
     // ─────────────────────────────────────────────────────────────────────────
 
-    [Table(Name = "GameState", Public = true)]
-    public partial struct GameState
+    [Table(Name = "game_state", Public = true)]
+    public partial class GameState
     {
-        [SpacetimeDB.PrimaryKey] public string Id;   // "main"
+        [PrimaryKey] public string Id;       // "main"
         public int Width;
         public int Height;
         public bool Running;
-        public long EndsAtUnix;                      // unix seconds
+        public long EndsAtUnix;              // unix seconds
         public int PlayersOnline;
     }
 
     [SpacetimeDB.Type]
     public enum Dir { Up, Down, Left, Right }
     [SpacetimeDB.Type]
-    public enum FruitKind { Blue, Red }      // Blue +1, Red -1
+    public enum FruitKind { Blue, Red } // Blue +1, Red -1
 
-    [SpacetimeDB.Table(Name = "Player", Public = true)]
-    public partial struct Player
+    [Table(Name = "player", Public = true)]
+    public partial class Player
     {
-        [SpacetimeDB.PrimaryKey] public string Id;   // stable client token
+        [PrimaryKey] public string Id;   // stable client token
         public string Nick;
 
         public int X;
         public int Y;
 
-        public Dir Dir;                // current heading
-        public Dir? NextDir;           // queued input
+        public Dir Dir;                  // current heading
+        public Dir? NextDir;             // queued input
 
         public int Score;
         public bool Alive;
 
-        public long MoveEveryMs;       // per-cell speed
+        public long MoveEveryMs;         // per-cell speed
         public long LastStepAtMs;
 
         public long JoinedAtMs;
         public long LastSeenAtMs;
     }
 
-    [SpacetimeDB.Table(Name = "Fruit", Public = true)]
-    public partial struct Fruit
+    [Table(Name = "fruit", Public = true)]
+    public partial class Fruit
     {
-        [SpacetimeDB.PrimaryKey] public string Id;   // guid string
+        [PrimaryKey] public string Id;   // guid string
         public FruitKind Kind;
         public int X;
         public int Y;
@@ -59,10 +58,10 @@ public static partial class Module
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // REDUCERS  (MUST take ReducerContext ctx)
+    // REDUCERS  (must accept ReducerContext ctx)
     // ─────────────────────────────────────────────────────────────────────────
 
-    [SpacetimeDB.Reducer]
+    [Reducer]
     public static void JoinGame(ReducerContext ctx, string playerId, string nick)
     {
         var gs = GetOrInitGame(ctx);
@@ -70,13 +69,13 @@ public static partial class Module
         if (!gs.Running)
             StartNewRound(ctx, seconds: 120);
 
-        var existing = ctx.Db.Player.First(p => p.Id == playerId);
-        if (existing.HasValue)
+        // PK lookup via generated accessor: ctx.Db.player.Id.Find
+        var existing = ctx.Db.player.Id.Find(playerId);
+        if (existing is not null)
         {
-            var p0 = existing.Value;
-            if (!string.IsNullOrWhiteSpace(nick)) p0.Nick = nick;
-            p0.LastSeenAtMs = NowMs();
-            ctx.Db.Player.Update(p0);
+            if (!string.IsNullOrWhiteSpace(nick)) existing.Nick = nick;
+            existing.LastSeenAtMs = NowMs();
+            ctx.Db.player.Id.Update(existing);
             return;
         }
 
@@ -96,44 +95,42 @@ public static partial class Module
             JoinedAtMs = NowMs(),
             LastSeenAtMs = NowMs()
         };
-        ctx.Db.Player.Insert(p);
+        ctx.Db.player.Insert(p);
 
         gs.PlayersOnline = Math.Max(0, gs.PlayersOnline + 1);
-        ctx.Db.GameState.Update(gs);
+        ctx.Db.game_state.Id.Update(gs);
     }
 
-    [SpacetimeDB.Reducer]
+    [Reducer]
     public static void LeaveGame(ReducerContext ctx, string playerId)
     {
-        var p = ctx.Db.Player.First(x => x.Id == playerId);
-        if (!p.HasValue) return;
+        var p = ctx.Db.player.Id.Find(playerId);
+        if (p is null) return;
 
-        ctx.Db.Player.Delete(p.Value);
+        ctx.Db.player.Delete(p);
 
         var gs = GetOrInitGame(ctx);
         gs.PlayersOnline = Math.Max(0, gs.PlayersOnline - 1);
-        ctx.Db.GameState.Update(gs);
+        ctx.Db.game_state.Id.Update(gs);
     }
 
     // Inputs only change desired direction. Movement happens in Tick().
-    [SpacetimeDB.Reducer]
+    [Reducer]
     public static void SetDir(ReducerContext ctx, string playerId, string dir)
     {
-        var mp = ctx.Db.Player.First(x => x.Id == playerId);
-        if (!mp.HasValue) return;
-        var p = mp.Value;
-        if (!p.Alive) return;
+        var p = ctx.Db.player.Id.Find(playerId);
+        if (p is null || !p.Alive) return;
 
         if (Enum.TryParse<Dir>(dir, true, out var d))
         {
             p.NextDir = d;
             p.LastSeenAtMs = NowMs();
-            ctx.Db.Player.Update(p);
+            ctx.Db.player.Id.Update(p);
         }
     }
 
     // Host calls this ~10x/sec (open client with #host).
-    [SpacetimeDB.Reducer]
+    [Reducer]
     public static void Tick(ReducerContext ctx)
     {
         var gs = GetOrInitGame(ctx);
@@ -143,7 +140,7 @@ public static partial class Module
         var nowSec = NowSec();
 
         // move everyone due a step
-        foreach (var pv in ctx.Db.Player.Iter())
+        foreach (var pv in ctx.Db.player.Iter())
         {
             var p = pv;
             if (!p.Alive) continue;
@@ -166,21 +163,20 @@ public static partial class Module
                 case Dir.Right: nx = Mod(nx + 1, gs.Width); break;
             }
             p.X = nx; p.Y = ny;
-            ctx.Db.Player.Update(p);
+            ctx.Db.player.Id.Update(p);
 
-            // fruit consume
-            var mf = ctx.Db.Fruit.First(f => f.X == nx && f.Y == ny);
-            if (mf.HasValue)
+            // fruit consume — iterate to find one at (nx,ny)
+            var fruit = FindFruitAt(ctx, nx, ny);
+            if (fruit is not null)
             {
-                var fr = mf.Value;
-                if (fr.Kind == FruitKind.Blue) p.Score += 1;
+                if (fruit.Kind == FruitKind.Blue) p.Score += 1;
                 else p.Score = Math.Max(0, p.Score - 1);
-                ctx.Db.Fruit.Delete(fr);
-                ctx.Db.Player.Update(p);
+                ctx.Db.fruit.Delete(fruit);
+                ctx.Db.player.Id.Update(p);
             }
         }
 
-        // resolve collisions cell-by-cell
+        // resolve collisions per cell
         ResolveAllCollisions(ctx);
 
         // spawn fruits every 5s
@@ -190,12 +186,12 @@ public static partial class Module
         if (nowSec >= gs.EndsAtUnix)
         {
             gs.Running = false;
-            ctx.Db.GameState.Update(gs);
+            ctx.Db.game_state.Id.Update(gs);
         }
     }
 
-    // Optional admin command
-    [SpacetimeDB.Reducer]
+    // Admin helper
+    [Reducer]
     public static void StartRound(ReducerContext ctx, int seconds)
     {
         StartNewRound(ctx, seconds);
@@ -210,13 +206,13 @@ public static partial class Module
         var gs = GetOrInitGame(ctx);
         gs.Running = true;
         gs.EndsAtUnix = DateTimeOffset.UtcNow.AddSeconds(seconds).ToUnixTimeSeconds();
-        ctx.Db.GameState.Update(gs);
+        ctx.Db.game_state.Id.Update(gs);
 
         // clear fruits
-        foreach (var f in ctx.Db.Fruit.Iter()) ctx.Db.Fruit.Delete(f);
+        foreach (var f in ctx.Db.fruit.Iter()) ctx.Db.fruit.Delete(f);
 
-        // reset players and spread on map
-        foreach (var pv in ctx.Db.Player.Iter())
+        // reset players & spread
+        foreach (var pv in ctx.Db.player.Iter())
         {
             var p = pv;
             p.Score = 5; p.Alive = true;
@@ -224,7 +220,7 @@ public static partial class Module
             p.X = x; p.Y = y;
             p.Dir = Dir.Right; p.NextDir = null;
             p.LastStepAtMs = NowMs();
-            ctx.Db.Player.Update(p);
+            ctx.Db.player.Id.Update(p);
         }
 
         // initial fruits
@@ -239,7 +235,7 @@ public static partial class Module
         {
             var (x, y) = RandomEmptyCell(ctx, gs.Width, gs.Height);
             var kind = r.NextDouble() < 0.65 ? FruitKind.Blue : FruitKind.Red;
-            ctx.Db.Fruit.Insert(new Fruit
+            ctx.Db.fruit.Insert(new Fruit
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Kind = kind,
@@ -252,9 +248,9 @@ public static partial class Module
 
     static void ResolveAllCollisions(ReducerContext ctx)
     {
-        // bucket players by cell
         var buckets = new Dictionary<(int, int), List<Player>>();
-        foreach (var pv in ctx.Db.Player.Iter())
+
+        foreach (var pv in ctx.Db.player.Iter())
         {
             var p = pv;
             if (!p.Alive) continue;
@@ -281,12 +277,19 @@ public static partial class Module
                 {
                     top.Score += 1;
                     o.Score = Math.Max(0, o.Score - 1);
-                    ctx.Db.Player.Update(top);
-                    ctx.Db.Player.Update(o);
+                    ctx.Db.player.Id.Update(top);
+                    ctx.Db.player.Id.Update(o);
                 }
                 // equal => bounce (no score change)
             }
         }
+    }
+
+    static Fruit? FindFruitAt(ReducerContext ctx, int x, int y)
+    {
+        foreach (var f in ctx.Db.fruit.Iter())
+            if (f.X == x && f.Y == y) return f;
+        return null;
     }
 
     static (int x, int y) RandomEmptyCell(ReducerContext ctx, int w, int h)
@@ -295,19 +298,32 @@ public static partial class Module
         for (int tries = 0; tries < 2000; tries++)
         {
             int x = r.Next(w), y = r.Next(h);
-            bool occ = ctx.Db.Player.Any(p => p.Alive && p.X == x && p.Y == y)
-                    || ctx.Db.Fruit.Any(f => f.X == x && f.Y == y);
-            if (!occ) return (x, y);
+            if (!AnyPlayerAt(ctx, x, y) && !AnyFruitAt(ctx, x, y))
+                return (x, y);
         }
         return (r.Next(w), r.Next(h)); // rare fallback
     }
 
+    static bool AnyPlayerAt(ReducerContext ctx, int x, int y)
+    {
+        foreach (var p in ctx.Db.player.Iter())
+            if (p.Alive && p.X == x && p.Y == y) return true;
+        return false;
+    }
+
+    static bool AnyFruitAt(ReducerContext ctx, int x, int y)
+    {
+        foreach (var f in ctx.Db.fruit.Iter())
+            if (f.X == x && f.Y == y) return true;
+        return false;
+    }
+
     static GameState GetOrInitGame(ReducerContext ctx)
     {
-        var m = ctx.Db.GameState.First(g => g.Id == "main");
-        if (m.HasValue) return m.Value;
+        var gs = ctx.Db.game_state.Id.Find("main");
+        if (gs is not null) return gs;
 
-        var gs = new GameState
+        gs = new GameState
         {
             Id = "main",
             Width = 100,
@@ -316,7 +332,7 @@ public static partial class Module
             EndsAtUnix = 0,
             PlayersOnline = 0
         };
-        ctx.Db.GameState.Insert(gs);
+        ctx.Db.game_state.Insert(gs);
         return gs;
     }
 
@@ -324,6 +340,7 @@ public static partial class Module
     static long NowMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     static long NowSec() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
+    // single Random instance
     static readonly object _rngLock = new object();
     static Random _rng = new Random();
     static Random Rng() { lock (_rngLock) return _rng; }
