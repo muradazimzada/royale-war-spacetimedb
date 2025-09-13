@@ -6,6 +6,7 @@ import { inputManager } from '../core/InputManager';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { WORLD_WIDTH, WORLD_HEIGHT } from '../config/constants';
+import { LoginScreen } from './LoginScreen';
 
 interface GameCanvasProps {
     width?: number;
@@ -18,11 +19,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [gameStarted, setGameStarted] = useState(false);
+    const [showLogin, setShowLogin] = useState(true);
+    const [playerName, setPlayerName] = useState<string>('');
 
     useEffect(() => {
         loadAssets();
         return () => cleanup();
     }, []);
+
+    // Start game after login when canvas is ready
+    useEffect(() => {
+        if (!showLogin && playerName && !gameStarted && !isLoading && !error) {
+            // Small delay to ensure canvas is rendered
+            const timer = setTimeout(() => {
+                startGame(playerName);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [showLogin, playerName, gameStarted, isLoading, error]);
 
     const loadAssets = async () => {
         try {
@@ -73,7 +87,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         }
     };
 
-    const startGame = async () => {
+    const handleLogin = (name: string) => {
+        setPlayerName(name);
+        setShowLogin(false);
+        // Don't start game immediately - wait for canvas to render
+    };
+
+    const startGame = async (name: string = 'Player') => {
         try {
             // Initialize game first
             await initializeGame();
@@ -82,8 +102,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                 setError('Game not properly initialized');
                 return;
             }
-            // Create player
-            const player = new Player(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 'Local Player');
+            // Create player with the provided name
+            const player = new Player(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, name);
             gameState.player = player;
             gameState.addObject(player);
 
@@ -112,6 +132,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         inputManager.removeInputHandlers();
         gameState.reset();
     };
+
+    // Show login screen first
+    if (showLogin && !isLoading && !error) {
+        return <LoginScreen onLogin={handleLogin} />;
+    }
 
     if (isLoading) {
         return (
@@ -189,37 +214,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                 />
             </div>
 
-            {!gameStarted && (
-                <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    color: 'white',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                }}>
-                    <h3>Local Game Demo</h3>
-                    <p>Use WASD or arrow keys to move</p>
-                    <button
-                        onClick={startGame}
-                        style={{
-                            padding: '10px 20px',
-                            fontSize: '16px',
-                            backgroundColor: '#4CAF50',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            marginTop: '10px'
-                        }}
-                    >
-                        Start Game
-                    </button>
-                </div>
-            )}
         </div>
     );
 };
