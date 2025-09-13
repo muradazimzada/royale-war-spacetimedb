@@ -1,5 +1,4 @@
 import React from 'react';
-import App from '../App';
 import { GameCanvas } from './GameCanvas';
 
 export const DemoPage: React.FC = () => {

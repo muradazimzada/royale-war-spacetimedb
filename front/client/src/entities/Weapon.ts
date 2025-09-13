@@ -37,7 +37,7 @@ export abstract class Weapon implements GameObject {
         this.updateFramesPassed += 1;
     }
 
-    draw(context: CanvasRenderingContext2D): void {
+    draw(_context: CanvasRenderingContext2D): void {
         // Override in subclasses
     }
 

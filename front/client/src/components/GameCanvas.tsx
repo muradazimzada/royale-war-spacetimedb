@@ -30,7 +30,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         error: dbError,
         playerId,
         players,
-        fruits,
         gameState: dbGameState,
         joinGame,
         leaveGame,

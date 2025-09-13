@@ -19,7 +19,7 @@ export class Enemy {
     id: number;
     leftAnimation: Animation;
     rightAnimation: Animation;
-    animation: Animation;
+    animation: Animation = new Animation([]);
     idle: boolean;
     x: number;
     prevX: number;
@@ -33,7 +33,7 @@ export class Enemy {
     attackSpeed: number;
     lastAttackTime: number;
     destroyed: boolean;
-    direction: number;
+    direction: number = FACE_RIGHT;
 
     constructor(x: number, y: number) {
         this.id = getNextEnemyId();

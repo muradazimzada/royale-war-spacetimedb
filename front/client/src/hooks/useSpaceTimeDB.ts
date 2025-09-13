@@ -205,10 +205,10 @@ export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
 
     // Setup table listeners for game state
     useEffect(() => {
-        if (!connection || !connected || !connection.db?.game_state) return;
+        if (!connection || !connected || !connection.db?.gameState) return;
 
         const seedGameState = () => {
-            for (const state of connection.db.game_state.iter()) {
+            for (const state of connection.db.gameState.iter()) {
                 setGameState(state);
                 break; // Only one game state
             }
@@ -226,16 +226,16 @@ export function useSpaceTimeDB(): SpaceTimeDBState & SpaceTimeDBActions {
             setGameState(null);
         };
 
-        connection.db.game_state.onInsert(onGameStateInsert);
-        connection.db.game_state.onUpdate(onGameStateUpdate);
-        connection.db.game_state.onDelete(onGameStateDelete);
+        connection.db.gameState.onInsert(onGameStateInsert);
+        connection.db.gameState.onUpdate(onGameStateUpdate);
+        connection.db.gameState.onDelete(onGameStateDelete);
         seedGameState();
 
         return () => {
-            if (connection.db?.game_state) {
-                connection.db.game_state.removeOnInsert(onGameStateInsert);
-                connection.db.game_state.removeOnUpdate(onGameStateUpdate);
-                connection.db.game_state.removeOnDelete(onGameStateDelete);
+            if (connection.db?.gameState) {
+                connection.db.gameState.removeOnInsert(onGameStateInsert);
+                connection.db.gameState.removeOnUpdate(onGameStateUpdate);
+                connection.db.gameState.removeOnDelete(onGameStateDelete);
             }
         };
     }, [connection, connected]);

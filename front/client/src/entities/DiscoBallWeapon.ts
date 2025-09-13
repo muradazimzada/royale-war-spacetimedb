@@ -30,7 +30,7 @@ export class DiscoBallWeapon extends Weapon {
         }
     }
 
-    draw(context: CanvasRenderingContext2D): void {
+    draw(_context: CanvasRenderingContext2D): void {
         // This weapon doesn't draw itself, it spawns DiscoPool objects
     }
 }

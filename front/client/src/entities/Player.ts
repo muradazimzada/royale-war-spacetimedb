@@ -17,7 +17,7 @@ export class Player {
     name: string;
     leftAnimation: Animation;
     rightAnimation: Animation;
-    animation: Animation;
+    animation: Animation = new Animation([]);
     idle: boolean;
     x: number;
     y: number;
@@ -30,7 +30,7 @@ export class Player {
     xp: number;
     nextLevelXp: number;
     prevLevelXp: number;
-    direction: number;
+    direction: number = FACE_RIGHT;
     onScoreUpdate?: (newScore: number) => void;
 
     constructor(x: number, y: number, name: string = 'Player') {
@@ -79,7 +79,7 @@ export class Player {
         this.animation.update(this.idle);
 
         // update weapons...
-        this.items.forEach(item => item.update(this));
+        this.items.forEach(item => item.update());
     }
 
     draw(context: CanvasRenderingContext2D): void {
