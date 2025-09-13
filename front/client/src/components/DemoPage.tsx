@@ -3,7 +3,7 @@ import { GameCanvas } from './GameCanvas';
 
 export const DemoPage: React.FC = () => {
     return (
-        <div style={{ padding: '20px 0', backgroundColor: '#0b0f19', minHeight: '100vh', color: 'white', width: '100%' }}>
+        <div style={{ padding: '0 0', backgroundColor: '#0b0f19', color: 'white', width: '100%', height: '100vh', overflow: 'hidden' }}>
             <h1 style={{ textAlign: 'center', marginBottom: '40px' }}>Royale War - Game Development Demo</h1>
 
             <div style={{
@@ -15,21 +15,21 @@ export const DemoPage: React.FC = () => {
             }}>
                 {/* Local Canvas Game */}
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                    <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#9cff6b' }}>
+                    {/* <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#9cff6b' }}>
                         Local Canvas Game
-                    </h2>
+                    </h2> */}
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <GameCanvas width={1200} height={800} />
                     </div>
-                    <div style={{ marginTop: '20px', fontSize: '16px', color: '#888', textAlign: 'center' }}>
+                    {/* <div style={{ marginTop: '20px', fontSize: '16px', color: '#888', textAlign: 'center' }}>
                         <p>• Canvas-based rendering with sprites</p>
                         <p>• Local game loop and entity system</p>
                         <p>• Ported from original frontend code</p>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 
-            <div style={{
+            {/* <div style={{
                 marginTop: '40px',
                 textAlign: 'center',
                 padding: '20px',
@@ -47,7 +47,7 @@ export const DemoPage: React.FC = () => {
                     Next steps: Integrate the enhanced rendering and game logic with the SpaceTimeDB multiplayer system
                     for a unified gaming experience.
                 </p>
-            </div>
+            </div> */}
         </div>
     );
 };
