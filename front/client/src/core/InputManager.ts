@@ -24,25 +24,31 @@ export class InputManager {
             case KEY_LEFT:
             case 65: // A key
                 this.input.left = true;
+                event.preventDefault();
                 break;
             case KEY_RIGHT:
             case 68: // D key
                 this.input.right = true;
+                event.preventDefault();
                 break;
             case KEY_UP:
             case 87: // W key
                 this.input.up = true;
+                event.preventDefault();
                 break;
             case KEY_DOWN:
             case 83: // S key
                 this.input.down = true;
+                event.preventDefault();
                 break;
             case 48: // 0 key - debug: destroy all enemies
                 this.destroyAllEnemies();
+                event.preventDefault();
                 break;
             case 82: // R key - restart game
                 if (gameState.isGameOver()) {
                     this.restartGame();
+                    event.preventDefault();
                 }
                 break;
         }
@@ -53,18 +59,22 @@ export class InputManager {
             case KEY_LEFT:
             case 65: // A key
                 this.input.left = false;
+                event.preventDefault();
                 break;
             case KEY_RIGHT:
             case 68: // D key
                 this.input.right = false;
+                event.preventDefault();
                 break;
             case KEY_UP:
             case 87: // W key
                 this.input.up = false;
+                event.preventDefault();
                 break;
             case KEY_DOWN:
             case 83: // S key
                 this.input.down = false;
+                event.preventDefault();
                 break;
         }
     };

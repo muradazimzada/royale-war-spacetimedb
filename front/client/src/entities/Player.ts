@@ -47,8 +47,9 @@ export class Player {
         this.x = x;
         this.y = y;
         this.level = 1;
-        this.width = 30 * 2;
-        this.height = 33 * 2;
+        // Make the player sprite larger for better visibility
+        this.width = 30 * 3;
+        this.height = 33 * 3;
         this.health = 50;
         this.speed = 3;
         this.items = [new MicWeapon(), new DiscoBallWeapon()];
@@ -95,37 +96,42 @@ export class Player {
             this.width, this.height
         );
 
-        // draw player name above sprite
+        // draw player name and score above sprite
         this.drawName(context);
     }
 
     drawName(context: CanvasRenderingContext2D): void {
         context.save();
 
-        // Set font and measure text
-        context.font = '14px monospace';
-        const textMetrics = context.measureText(this.name);
-        const textWidth = textMetrics.width;
-        const textHeight = 14;
+        // Calculate score as XP plus level bonus
+        const score = this.xp + (this.level * 10);
+        const nameText = this.name;
+        const scoreText = `Score: ${score}`;
+
+        // Use larger font for better readability
+        context.font = '16px monospace';
+        const nameMetrics = context.measureText(nameText);
+        const scoreMetrics = context.measureText(scoreText);
+        const textWidth = Math.max(nameMetrics.width, scoreMetrics.width);
+        const lineHeight = 16;
+        const padding = 4;
 
         // Position above player sprite
-        const nameX = this.x;
-        const nameY = this.y - (this.height / 2.0) - 20;
+        const boxX = this.x;
+        const boxY = this.y - (this.height / 2.0) - (lineHeight * 2) - padding * 3;
+        const boxWidth = textWidth + padding * 2;
+        const boxHeight = lineHeight * 2 + padding * 3;
 
-        // Draw background rectangle for better readability
+        // Background rectangle
         context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        context.fillRect(
-            nameX - (textWidth / 2) - 4,
-            nameY - textHeight,
-            textWidth + 8,
-            textHeight + 4
-        );
+        context.fillRect(boxX - boxWidth / 2, boxY, boxWidth, boxHeight);
 
-        // Draw name text
+        // Draw text lines
         context.fillStyle = 'white';
         context.textAlign = 'center';
         context.textBaseline = 'top';
-        context.fillText(this.name, nameX, nameY - textHeight + 2);
+        context.fillText(nameText, boxX, boxY + padding);
+        context.fillText(scoreText, boxX, boxY + padding + lineHeight);
 
         context.restore();
     }

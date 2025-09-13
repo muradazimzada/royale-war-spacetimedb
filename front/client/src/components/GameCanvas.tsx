@@ -30,6 +30,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         error: dbError,
         playerId,
         players,
+        fruits,
         gameState: dbGameState,
         joinGame,
         leaveGame,
@@ -38,6 +39,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
         startRound,
         tick
     } = useSpaceTimeDB();
+
+    // Count red and blue fruits for the UI
+    const redCount = fruits.filter(f => f.kind.tag === 'Red').length;
+    const blueCount = fruits.filter(f => f.kind.tag === 'Blue').length;
 
     useEffect(() => {
         loadAssets();
@@ -407,6 +412,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ width = 800, height = 60
                             Game: {dbGameState.running ? 'Running' : 'Waiting'}
                         </div>
                     )}
+
+                    {/* Fruit counts */}
+                    <div style={{ paddingTop: '10px', borderTop: '1px solid #444' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Fruits:</div>
+                        <div style={{ marginBottom: '3px', color: '#ff6b6b' }}>Red: {redCount}</div>
+                        <div style={{ color: '#62d2ff' }}>Blue: {blueCount}</div>
+                    </div>
 
                     {/* Debug controls */}
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #444' }}>
