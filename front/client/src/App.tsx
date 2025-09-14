@@ -178,11 +178,11 @@ function useGameState(conn: DbConnection | null): G | null {
       }
     }
     const onInsert = (_: EventContext, g: GameStateRow) => {
-      console.log('[GameState] INSERT', { width: g.width, height: g.height, running: g.running })
+      console.log('[GameState] INSERT', { width: g.width, height: g.height, running: g.running, endsAtUnix: Number(g.endsAtUnix) })
       setGame(toG(g))
     }
     const onUpdate = (_: EventContext, _o: GameStateRow, g: GameStateRow) => {
-      console.log('[GameState] UPDATE', { width: g.width, height: g.height, running: g.running })
+      console.log('[GameState] UPDATE', { width: g.width, height: g.height, running: g.running, endsAtUnix: Number(g.endsAtUnix) })
       setGame(toG(g))
     }
     const onDelete = () => setGame(null)
@@ -671,9 +671,11 @@ export default function App() {
               </div>
             )
           })()
+          // Hide stale/offline players on the grid while idle by requiring recent activity
+          const gridPlayers = game.running ? visiblePlayers : visiblePlayers.filter(isRecentlyActive)
           return (
             <div style={{ position: 'relative', width: w, height: h }}>
-              <Grid game={game} players={visiblePlayers} fruits={fruits} me={playerId} cell={CELL} />
+              <Grid game={game} players={gridPlayers} fruits={fruits} me={playerId} cell={CELL} />
               {overlay}
             </div>
           )

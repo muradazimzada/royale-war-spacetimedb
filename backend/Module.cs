@@ -69,6 +69,8 @@ public static partial class Module
     {
         Log.Info($"JoinGame called: playerId={playerId}, nick={nick}");
         var gs = GetOrInitGame(ctx);
+        // Clean up long-idle players so stale rows don't appear when someone new joins
+        CleanInactivePlayers(ctx);
         // Do NOT auto-start a round on join. The round should start only when StartRound is called.
 
         // PK lookup via generated accessor: ctx.Db.player.Id.Find
@@ -276,11 +278,12 @@ public static partial class Module
         // Mark long-idle players as inactive/off-board; keep only recently active ones
         CleanInactivePlayers(ctx);
 
-        // Require at least 2 READY players. Readiness is signaled by Alive=true while idle
-        // (toggled by any input in SetDir when !gs.Running).
+        // Require at least 2 READY players (alive AND recently active)
+        // Readiness is toggled by any input in SetDir when !gs.Running.
+        var nowMs = NowMs();
         int ready = 0;
         foreach (var p in ctx.Db.player.Iter())
-            if (p.Alive) ready++;
+            if (p.Alive && nowMs - p.LastSeenAtMs < INACTIVE_KICK_MS) ready++;
         if (ready < 2)
         {
             var gs = GetOrInitGame(ctx);
@@ -308,18 +311,18 @@ public static partial class Module
         // clear fruits
         foreach (var f in ctx.Db.fruit.Iter()) ctx.Db.fruit.Delete(f);
 
-        // Reset and spread only READY players (Alive==true). Others remain off-board/inactive.
+        // Reset and spread only READY players (Alive==true and recently active).
         foreach (var pv in ctx.Db.player.Iter())
         {
             var p = pv;
-            if (!p.Alive) continue; // only ready players join this round
+            var now = NowMs();
+            if (!p.Alive || now - p.LastSeenAtMs >= INACTIVE_KICK_MS) continue; // only ready & fresh players join
 
             p.Score = 5;
             // keep Alive=true (was set by readiness input)
             var (x, y) = RandomEmptyCell(ctx, gs.Width, gs.Height);
             p.X = x; p.Y = y;
             p.Dir = Dir.Right; p.NextDir = null;
-            var now = NowMs();
             p.LastStepAtMs = now;
             // adopt current defaults and backfill legacy zero timestamps
             p.MoveEveryMs = DEFAULT_STEP_MS;
