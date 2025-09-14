@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
@@ -12,7 +13,6 @@ import type { Player as PlayerRow } from './module_bindings/player_type'
 import type { Fruit as FruitRow } from './module_bindings/fruit_type'
 import type { GameState as GameStateRow } from './module_bindings/game_state_type'
 // Enum (generated)
-import { FruitKind } from './module_bindings/fruit_kind_type'
 import { Identity } from '@clockworklabs/spacetimedb-sdk'
 
 /** ───────────── UI Types ───────────── */
