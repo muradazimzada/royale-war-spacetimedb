@@ -1,42 +1,197 @@
+/* Make the app a fixed 2-pane layout and kill page scrolling */
+html,
+body,
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: #101419;
+  color: #e9eef2;
+}
+
+.full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%
+}
+
+.screen {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  /* arena | sidebar */
+  height: 100%;
+  gap: 0;
+}
+
+/* Left: arena is static; no scroll on keys */
+.left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /* keep grid static */
+  background: #0b0f19;
+}
+
+.arena {
+  /* big grid fits; you can zoom the page if needed */
+  border-right: 1px solid #1b2230;
+}
+
+.arena svg {
+  display: block;
+}
+
+/* grid lines */
+.arena line {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+
+/* fruit colors */
+.fruit-blue {
+  fill: #62d2ff;
+}
+
+.fruit-red {
+  fill: #ff6b6b;
+}
+
+/* player score text */
+.player .score {
+  fill: #fff;
+  font: 700 18px/1 monospace;
+}
+
+/* make my icon larger */
+.player text {
+  font-size: 30px;
+  dominant-baseline: middle
+}
+
+.player text.me {
+  font-size: 36px;
+}
+
+/* Right panel */
+.right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #141a22;
+  padding: 16px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.right header h2 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 12px;
+  font-family: monospace;
+}
+
+.board {
+  overflow: auto;
+  flex: 1;
+}
+
+.board h3 {
+  margin: 4px 0 8px;
+}
+
+.board ol {
+  list-style: decimal;
+  padding-left: 18px;
+  margin: 0;
+}
+
+.board li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.board li.me {
+  background: #1a2533;
+}
+
+.board .nick {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board .score {
+  margin-left: 12px;
+  font-weight: 700;
+}
+
+.meBox {
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.meBox .meIcon {
+  font-size: 64px;
+  line-height: 1;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.meBox .who {
+  opacity: 0.8;
+  font-family: monospace;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.card {
-  padding: 2em;
+button {
+  background: #3dc373;
+  color: #08180e;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: monospace;
 }
 
-.read-the-docs {
-  color: #888;
+button:hover {
+  filter: brightness(1.05);
+}
+
+.logs {
+  background: #0d131a;
+  border: 1px solid #1f2a39;
+  border-radius: 8px;
+  padding: 8px;
+  height: 100px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+
+/* Mobile d-pad */
+.dpad {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dpad .lr {
+  display: flex;
+  gap: 6px;
 }

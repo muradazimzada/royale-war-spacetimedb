@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royale War</title>
+    <link rel="stylesheet" href="/src/styles/login.css">
+    <script type="module" src="/src/main.js"></script>
+</head>
+
+<body style="overflow:hidden; padding:0; margin:0;">
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-box">
+            <h1 class="game-title">🎮 Royale War 🎮</h1>
+            <h2 class="game-subtitle">Disco Survivors</h2>
+            
+            <form id="login-form" class="login-form">
+                <input 
+                    type="text" 
+                    id="player-name" 
+                    class="name-input" 
+                    placeholder="Enter your name"
+                    maxlength="20"
+                    required
+                    autocomplete="off"
+                />
+                <button type="submit" class="play-button">PLAY</button>
+            </form>
+            
+            <div class="game-instructions">
+                <p>Use arrow keys to move</p>
+                <p>Survive the skeleton waves!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Canvas (initially hidden) -->
+    <div id="canvas-container" style="position:absolute; top:0; left:0; display:none;">
+        <canvas id="canvas" width="2000" height="2000">
+        </canvas>
+    </div>
+</body>
+
+</html>
